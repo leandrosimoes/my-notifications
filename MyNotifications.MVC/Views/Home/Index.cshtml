@@ -1,0 +1,99 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+
+    <link href="~/Content/app/app.min.css" rel="stylesheet" />
+
+    <script src="~/Scripts/jquery-1.9.1.js"></script>
+    <script src="~/Scripts/jquery-1.9.1.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.2.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.2.min.js"></script>
+    <script src="http://localhost:51186/signalr/hubs/" type="text/javascript"></script>
+</head>
+<body>
+    <div id="main">
+        <h1>My Notifications</h1>
+        <div id="form-area">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="form-group">
+                        <label for="title" class="control-label">Title</label>
+                        <input class="form-control input-lg" id="title" type="text" value="" data-bind="value: Title, valueUpdate: 'afterkeydown', disable: Block" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="form-group">
+                        <label for="message" class="control-label">Message</label>
+                        <input class="form-control input-lg" id="message" type="text" value="" data-bind="value: Message, valueUpdate: 'afterkeydown', disable: Block" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="form-group">
+                        <label for="message" class="control-label">User</label>
+                        <select class="form-control input-lg" id="user" data-bind="value: SelectedUser, options: Users, disable: Block, optionsCaption: 'Select an user'"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="form-group">
+                        <label for="message" class="control-label">Notification Type</label>
+                        <select class="form-control input-lg" id="type" data-bind="value: SelectedType, options: Types, disable: Block"></select>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div class="btn-toolbar">
+                <button id="send" type="button" class="btn btn-lg btn-primary" data-bind="click: SendNotification, disable: Block"><span class="glyphicon glyphicon-send" aria-hidden="true"></span></button>
+            </div>
+            <div id="error-area" data-bind="visible: HasErrors" style="display: none;">
+                <ul data-bind="foreach: Errors">
+                    <li data-bind="text: $data"></li>
+                </ul>
+            </div>
+        </div>
+        <div data-bind="visible: HasNotifications" style="display: none;">
+            <h3>Notifications</h3>
+            <div class="grid-area">
+                <table class="table table-responsive table-striped">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Message</th>
+                            <th>Lida</th>
+                        </tr>
+                    </thead>
+                    <tbody data-bind="foreach: Notifications">
+                        <tr data-bind="css: { 'notification-read': read }">
+                            <td data-bind="text: title"></td>
+                            <td data-bind="text: message"></td>
+                            <td data-bind="text: readDescription"></td>
+                        </tr>
+                        <tr class="notification-answer" data-bind="visible: showAnswer">
+                            <td colspan="3"><b>User's answer:</b> <span data-bind="text: answer"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    <script src="~/Scripts/knockout-3.4.2.js"></script>
+    <script src="~/Scripts/knockout.mapping-latest.js"></script>
+    <script src="~/Scripts/app/app.js"></script>
+</body>
+</html>
