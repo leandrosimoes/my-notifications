@@ -12,9 +12,13 @@ namespace MyNotifications.MVC.Controllers
 {
     public class HomeController : Controller
     {
-        private IHubContext _context;
+        private readonly IHubContext _context;
 
-        // GET: Home
+        public HomeController()
+        {
+            _context = GlobalHost.ConnectionManager.GetHubContext<NotificationsHub>();
+        }
+
         public ActionResult Index()
         {
             return View();
@@ -32,11 +36,9 @@ namespace MyNotifications.MVC.Controllers
                 type = type
             };
 
-            var context = GlobalHost.ConnectionManager.GetHubContext<NotificationsHub>();
-
             if (UserHandler.ConnectedIds.Contains(returnModel.idUser.ToString()))
             {
-                context.Clients.Client(returnModel.idUser.ToString())
+                _context.Clients.Client(returnModel.idUser.ToString())
                     .notificationReceived(
                         returnModel.id,
                         returnModel.title,

@@ -23,10 +23,7 @@
         });
     };
 
-    window.mn = {};
-    window.mn.models = {};
-
-    window.mn.koInit = function (args) {
+    window.koInit = function (args) {
         args.model = ko.dataFor(args.area[0]) || ko.mapping.fromJS(args.view)
 
         try {
@@ -51,27 +48,34 @@
     };
 
     function setupSignalR(options) {
-        var signalRModel = {};
+        var signalR = {};
 
-        signalRModel._cnn = $.connection;
-        signalRModel.myHub = signalRModel._cnn[options.hubName];
+        signalR._cnn = $.connection;
+        signalR.myHub = signalR._cnn[options.hubName];
 
-        if (!signalRModel.myHub) throw 'Hub not found!';
+        if (!signalR.myHub) throw 'Hub not found!';
 
         for (var index in options.clientCallbacks) {
-            signalRModel.myHub.client[options.clientCallbacks[index].name] = options.clientCallbacks[index].callback;
+            signalR.myHub.client[options.clientCallbacks[index].name] = options.clientCallbacks[index].callback;
         }
 
-        signalRModel._cnn.hub.url = options.hubUrl;
+        for (var index in options.serverCallbacks) {
+            signalR[options.serverCallbacks[index].name] = options.serverCallbacks[index].callback;
+        }
 
-        signalRModel._cnn.hub.start()
-            .done(options.onDone || function () { console.log('Start success!'); })
-            .fail(options.onError || function (error) { console.log('Start error: ' + error); });
+        signalR._cnn.hub.url = options.hubUrl;
 
-        return signalRModel;
+        signalR._cnn.hub.error(function (error) {
+            window.notificationsModel.Errors.push(error);
+        });
+        signalR._cnn.hub.start()
+            .done(options.onConnectionDone || function () { console.log('Start success!'); })
+            .fail(options.onConnectionError || function (error) { console.log('Start error: ' + error); });
+
+        return signalR;
     };
 
-    var koNotif = window.mn.koInit({
+    var koNotif = window.koInit({
         area: $area,
         view: {
             Title: '',
@@ -84,54 +88,35 @@
             Types: ['Simple', 'Yes or No', 'Answer'],
             SelectedType: '',
             SelectUser: function (id) {
-                window.mn.models.notificationsModel.SelectedUser(id);
+                window.notificationsModel.SelectedUser(id);
             },
             SendNotification: function () {
-                window.mn.models.notificationsModel.Errors([]);
+                window.notificationsModel.Errors([]);
 
                 var data = {
-                    title: window.mn.models.notificationsModel.Title(),
-                    message: window.mn.models.notificationsModel.Message(),
-                    user: window.mn.models.notificationsModel.SelectedUser(),
-                    type: types[window.mn.models.notificationsModel.SelectedType().toLowerCase().replace(/\s/g, '_')]
+                    title: window.notificationsModel.Title(),
+                    message: window.notificationsModel.Message(),
+                    user: window.notificationsModel.SelectedUser(),
+                    type: types[window.notificationsModel.SelectedType().toLowerCase().replace(/\s/g, '_')]
                 };
 
                 if (!data.title) {
-                    window.mn.models.notificationsModel.Errors.push('The "Title" is required');
+                    window.notificationsModel.Errors.push('The "Title" is required');
                 }
 
                 if (!data.message) {
-                    window.mn.models.notificationsModel.Errors.push('The "Message" is required');
+                    window.notificationsModel.Errors.push('The "Message" is required');
                 }
 
                 if (!data.user) {
-                    window.mn.models.notificationsModel.Errors.push('You have to chose an "User" to send the notification.');
+                    window.notificationsModel.Errors.push('You have to chose an "User" to send the notification.');
                 }
 
-                if (window.mn.models.notificationsModel.Errors().length > 0) return;
+                if (window.notificationsModel.Errors().length > 0) return;
 
-                window.mn.models.notificationsModel.Block(true);
+                window.notificationsModel.Block(true);
 
-                $.ajax({
-                    type: "POST",
-                    url: "/Home/SendNotification",
-                    contentType: "application/json charset=utf-8",
-                    data: JSON.stringify(data),
-                    dataType: "json",
-                    success: function (response) {
-                        if (response.Success) {
-                            window.mn.models.notificationsModel.Title('');
-                            window.mn.models.notificationsModel.Message('');
-
-                            var newNotification = new Notification(response.id, response.title, response.message, response.type);
-                            window.mn.models.notificationsModel.Notifications.push(newNotification);
-                        } else {
-                            window.mn.models.notificationsModel.Errors.push(response.ErrorMessage);
-                        }
-
-                        window.mn.models.notificationsModel.Block(false);
-                    }
-                });
+                window.notificationsModel.signalR.sendNotification(data.title, data.message, data.user, data.type);
             }
         },
         computeds: function (model) {
@@ -144,14 +129,14 @@
         }
     });
 
-    koNotif.model.signalRModel = setupSignalR({
+    koNotif.model.signalR = setupSignalR({
         hubName: 'notificationsHub',
         hubUrl: 'http://localhost:51186/signalr',
         clientCallbacks: [
             {
                 name: 'notificationRead',
                 callback: function (id, title, message, answer) {
-                    var existentNotif = window.mn.models.notificationsModel.Notifications();
+                    var existentNotif = window.notificationsModel.Notifications();
                     for (var index in existentNotif) {
                         if (existentNotif[index].id === id) {
                             existentNotif[index].read(true);
@@ -163,20 +148,39 @@
             {
                 name: 'newClientOnline',
                 callback: function (id) {
-                    window.mn.models.notificationsModel.Users.push(id);
+                    window.notificationsModel.Users.push(id);
                 }
             },
             {
                 name: 'disconnectUser',
                 callback: function (id) {
-                    window.mn.models.notificationsModel.Users.remove(id);
+                    window.notificationsModel.Users.remove(id);
                 }
             }
         ],
-        onDone: function () {
-            window.mn.models.notificationsModel.Block(false);
+        serverCallbacks: [{
+            name: 'sendNotification',
+            callback: function (title, message, user, type) {
+                window.notificationsModel.signalR.myHub.server.sendNotification(title, message, user, type)
+                    .done(function (result) {
+                        if (!!result.Success) {
+                            var newNotification = new Notification(result.id, result.title, result.message, result.type);
+                            window.notificationsModel.Notifications.push(newNotification);
+                        } else {
+                            window.notificationsModel.Erros.push(error);
+                        }
+                    });
+
+                window.notificationsModel.Block(false);
+            }
+        }],
+        onConnectionDone: function () {
+            window.notificationsModel.Block(false);
+        },
+        onConnectionError: function (error) {
+            window.notificationsModel.Erros.push(error);
         }
     });
 
-    window.mn.models.notificationsModel = koNotif.model;
+    window.notificationsModel = koNotif.model;
 })();

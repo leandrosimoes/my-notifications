@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR;
 using MyNotifications.MVC.Handlers;
 using MyNotifications.MVC.Interfaces;
+using MyNotifications.WPF.Enums;
+using MyNotifications.MVC.Returns;
 
 namespace MyNotifications.MVC
 {
@@ -36,7 +38,7 @@ namespace MyNotifications.MVC
             }
             else
             {
-                foreach (var id in UserHandler.ConnectedIds)    
+                foreach (var id in UserHandler.ConnectedIds)
                 {
                     Clients.All.newClientOnline(id);
                 }
@@ -58,6 +60,36 @@ namespace MyNotifications.MVC
         public void NotificationRead(Guid id, string title, string message, string answer)
         {
             Clients.All.notificationRead(id, title, message, answer);
+        }
+
+        public SendNotificationReturnModel SendNotification(string title, string message, Guid user, NotificationType type)
+        {
+            var retorno = new SendNotificationReturnModel
+            {
+                id = Guid.NewGuid(),
+                title = title,
+                message = message,
+                type = type,
+                idUser = user
+            };
+
+            if (UserHandler.ConnectedIds.Contains(user.ToString()))
+            {
+                Clients.Client(retorno.idUser.ToString())
+                    .notificationReceived(
+                        retorno.id,
+                        retorno.title,
+                        retorno.message,
+                        retorno.type);
+
+                return retorno;
+            }
+            else
+            {
+                retorno.ErrorMessage = "User is not connected";
+
+                return retorno;
+            }
         }
     }
 }
