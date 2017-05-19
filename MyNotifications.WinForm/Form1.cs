@@ -20,18 +20,11 @@ namespace MyNotifications.WinForm
 
             _controller.OnCloseNotifications += OnCloseNotification;
 
-            try
-            {
-                _conn = new HubConnection(@"http://localhost:51186/signalr/hubs", "fromDesktop=true");
-                _proxy = _conn.CreateHubProxy("NotificationsHub");
-                _proxy.On<Guid, string, string, NotificationType>("notificationReceived", (id, title, message, type) => OnMessageReceived(id, title, message, type));
-                _conn.Start().Wait();
+            _conn = new HubConnection(@"http://localhost:51186/signalr/hubs", "fromDesktop=true");
+            _proxy = _conn.CreateHubProxy("NotificationsHub");
+            _proxy.On<Guid, string, string, NotificationType>("notificationReceived", (id, title, message, type) => OnMessageReceived(id, title, message, type));
+            _conn.Start().Wait();
 
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
         }
 
         private void OnCloseNotification(object sender, OnCloseNotificationsArgs e)
