@@ -7,5 +7,6 @@ namespace MyNotifications.MVC.Interfaces
         void newClientOnline(string connectionId);
         void disconnectUser(string connectionId);
         void notificationRead(Guid id, string title, string message, string answer);
+        void chatMessageReceived(Guid idUser, string message, bool isAnswer);
     }
 }

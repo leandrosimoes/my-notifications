@@ -53,5 +53,36 @@ namespace MyNotifications.MVC.Controllers
                 Data = returnModel
             };
         }
+
+        [HttpPost]
+        public ActionResult SendChatMessage(string message, Guid user)
+        {
+            var returnModel = new SendChatMessageReturnModel
+            {
+                idUser = user,
+                message = message,
+                isAnswer = false
+            };
+
+            var context = GlobalHost.ConnectionManager.GetHubContext<NotificationsHub>();
+
+            if (UserHandler.ConnectedIds.Contains(returnModel.idUser.ToString()))
+            {
+                context.Clients.Client(returnModel.idUser.ToString())
+                    .chatMessageReceived(
+                        returnModel.idUser,
+                        returnModel.message,
+                        returnModel.isAnswer);
+            }
+            else
+            {
+                returnModel.ErrorMessage = "User is not connected anymore";
+            }
+
+            return new JsonResult
+            {
+                Data = returnModel
+            };
+        }
     }
 }

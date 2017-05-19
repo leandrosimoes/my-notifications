@@ -10,6 +10,20 @@ body #main {
   margin: 0 auto;
   margin-top: 20px;
 }
+html #main #menu,
+body #main #menu {
+  position: absolute;
+  padding: 10px;
+  top: 0;
+  left: 0;
+}
+html #main #menu button,
+body #main #menu button {
+  font-size: 20px;
+  cursor: pointer;
+  color: #aaa;
+  margin-bottom: 10px;
+}
 html #main button,
 body #main button {
   width: 100%;
@@ -38,8 +52,8 @@ html #main .form-group,
 body #main .form-group {
   margin-bottom: 0;
 }
-html #main #error-area,
-body #main #error-area {
+html #main .error-area,
+body #main .error-area {
   margin-top: 10px;
   background-color: #ff5151;
   padding: 10px 0 1px 0;

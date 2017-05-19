@@ -21,24 +21,88 @@
 </head>
 <body>
     <div id="main">
-        <h1>My Notifications</h1>
-        <div id="form-area">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="form-group">
-                        <label for="title" class="control-label">Title</label>
-                        <input class="form-control input-lg" id="title" type="text" value="" data-bind="value: Title, valueUpdate: 'afterkeydown', disable: Block" />
+        <div id="menu">
+            <button class="btn btn-default btn-lg" data-bind="css: { 'active': NotificationMode }, click: function() { ChangeMode(0); }">
+                <span class="glyphicon glyphicon-bell" aria-hidden="true"></span><br />
+                <span>Notifications</span>
+            </button>
+            <button class="btn btn-default btn-lg" data-bind="css: { 'active': ChatMode }, click: function() { ChangeMode(1); }">
+                <span class="glyphicon glyphicon-comment" aria-hidden="true"></span><br />
+                <span>Chat</span>
+            </button>
+        </div>
+        <div data-bind="visible: NotificationMode">
+            <h1>Notifications</h1>
+            <div id="form-area">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label for="title" class="control-label">Title</label>
+                            <input class="form-control input-lg" id="title" type="text" value="" data-bind="value: Title, valueUpdate: 'afterkeydown', disable: Block" />
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="form-group">
-                        <label for="message" class="control-label">Message</label>
-                        <input class="form-control input-lg" id="message" type="text" value="" data-bind="value: Message, valueUpdate: 'afterkeydown', disable: Block" />
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label for="message" class="control-label">Message</label>
+                            <input class="form-control input-lg" id="message" type="text" value="" data-bind="value: Message, valueUpdate: 'afterkeydown', disable: Block" />
+                        </div>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label for="message" class="control-label">User</label>
+                            <select class="form-control input-lg" id="user" data-bind="value: SelectedUser, options: Users, disable: Block, optionsCaption: 'Select an user'"></select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label for="message" class="control-label">Notification Type</label>
+                            <select class="form-control input-lg" id="type" data-bind="value: SelectedType, options: Types, disable: Block"></select>
+                        </div>
+                    </div>
+                </div>
+                <br />
+                <div class="btn-toolbar">
+                    <button id="send" type="button" class="btn btn-lg btn-primary" data-bind="click: SendNotification, disable: Block"><span class="glyphicon glyphicon-send" aria-hidden="true"></span></button>
+                </div>
+                <div class="error-area" data-bind="visible: HasErrors" style="display: none;">
+                    <ul data-bind="foreach: Errors">
+                        <li data-bind="text: $data"></li>
+                    </ul>
+                </div>
             </div>
+            <div data-bind="visible: HasNotifications" style="display: none;">
+                <h3>Notifications</h3>
+                <div class="grid-area">
+                    <table class="table table-responsive table-striped">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Message</th>
+                                <th>Lida</th>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="foreach: Notifications">
+                            <tr data-bind="css: { 'notification-read': read }">
+                                <td data-bind="text: title"></td>
+                                <td data-bind="text: message"></td>
+                                <td data-bind="text: readDescription"></td>
+                            </tr>
+                            <tr class="notification-answer" data-bind="visible: showAnswer">
+                                <td colspan="3"><b>User's answer:</b> <span data-bind="text: answer"></span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div data-bind="visible: ChatMode" style="display: none;">
+            <h1>Chat</h1>
             <div class="row">
                 <div class="col-lg-12">
                     <div class="form-group">
@@ -50,40 +114,25 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="form-group">
-                        <label for="message" class="control-label">Notification Type</label>
-                        <select class="form-control input-lg" id="type" data-bind="value: SelectedType, options: Types, disable: Block"></select>
+                        <label for="message" class="control-label">Message</label>
+                        <input class="form-control input-lg" id="messageChat" type="text" value="" data-bind="value: MessageChat, valueUpdate: 'afterkeydown', disable: Block" />
                     </div>
                 </div>
             </div>
             <br />
             <div class="btn-toolbar">
-                <button id="send" type="button" class="btn btn-lg btn-primary" data-bind="click: SendNotification, disable: Block"><span class="glyphicon glyphicon-send" aria-hidden="true"></span></button>
+                <button id="send" type="button" class="btn btn-lg btn-primary" data-bind="click: SendChatMessage, disable: Block"><span class="glyphicon glyphicon-send" aria-hidden="true"></span></button>
             </div>
-            <div id="error-area" data-bind="visible: HasErrors" style="display: none;">
+            <div class="error-area" data-bind="visible: HasErrors" style="display: none;">
                 <ul data-bind="foreach: Errors">
                     <li data-bind="text: $data"></li>
                 </ul>
             </div>
-        </div>
-        <div data-bind="visible: HasNotifications" style="display: none;">
-            <h3>Notifications</h3>
-            <div class="grid-area">
-                <table class="table table-responsive table-striped">
-                    <thead>
+            <div class="messages-area">
+                <table class="table">
+                    <tbody data-bind="foreach: ChatMessages">
                         <tr>
-                            <th>Title</th>
-                            <th>Message</th>
-                            <th>Lida</th>
-                        </tr>
-                    </thead>
-                    <tbody data-bind="foreach: Notifications">
-                        <tr data-bind="css: { 'notification-read': read }">
-                            <td data-bind="text: title"></td>
-                            <td data-bind="text: message"></td>
-                            <td data-bind="text: readDescription"></td>
-                        </tr>
-                        <tr class="notification-answer" data-bind="visible: showAnswer">
-                            <td colspan="3"><b>User's answer:</b> <span data-bind="text: answer"></span></td>
+                            <td data-bind="text: Message, css: { 'answer': IsAnswer }"></td>
                         </tr>
                     </tbody>
                 </table>

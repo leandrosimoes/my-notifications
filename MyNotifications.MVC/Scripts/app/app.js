@@ -4,6 +4,10 @@
             simple: 0,
             yes_or_no: 1,
             answer: 2
+        },
+        modes= {
+            notification: 0,
+            chat: 1
         };
 
     var Notification = function (id, title, message, type) {
@@ -21,6 +25,13 @@
         _self.showAnswer = ko.pureComputed(function () {
             return (_self.type() == types.yes_or_no || _self.type() == types.answer) && !!_self.answer();
         });
+    };
+
+    var Message = function (message, isAnswer) {
+        var _self = this;
+
+        _self.message = message;
+        _self.isAnswer = !!isAnswer;
     };
 
     window.mn = {};
@@ -76,6 +87,7 @@
         view: {
             Title: '',
             Message: '',
+            MessageChat: '',
             Block: true,
             Notifications: [],
             Users: [],
@@ -83,8 +95,55 @@
             Errors: [],
             Types: ['Simple', 'Yes or No', 'Answer'],
             SelectedType: '',
+            NotificationMode: false,
+            ChatMode: true,
+            ChatMessages: [],
+            ChangeMode: function (mode) {
+                window.mn.models.notificationsModel.NotificationMode(mode == modes.notification);
+                window.mn.models.notificationsModel.ChatMode(mode == modes.chat);
+            },
             SelectUser: function (id) {
                 window.mn.models.notificationsModel.SelectedUser(id);
+            },
+            SendChatMessage: function(){
+                window.mn.models.notificationsModel.Errors([]);
+
+                var data = {
+                    message: window.mn.models.notificationsModel.MessageChat(),
+                    user: window.mn.models.notificationsModel.SelectedUser()
+                };
+
+                if (!data.message) {
+                    window.mn.models.notificationsModel.Errors.push('The "Message" is required');
+                }
+
+                if (!data.user) {
+                    window.mn.models.notificationsModel.Errors.push('You have to chose an "User" to send the message.');
+                }
+
+                if (window.mn.models.notificationsModel.Errors().length > 0) return;
+
+                window.mn.models.notificationsModel.Block(true);
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Home/SendChatMessage",
+                    contentType: "application/json charset=utf-8",
+                    data: JSON.stringify(data),
+                    dataType: "json",
+                    success: function (response) {
+                        if (response.Success) {
+                            window.mn.models.notificationsModel.MessageChat('');
+
+                            var newMessage = new Message(response.message, false);
+                            window.mn.models.notificationsModel.ChatMessages.push(newMessage);
+                        } else {
+                            window.mn.models.notificationsModel.Errors.push(response.ErrorMessage);
+                        }
+
+                        window.mn.models.notificationsModel.Block(false);
+                    }
+                });
             },
             SendNotification: function () {
                 window.mn.models.notificationsModel.Errors([]);
@@ -170,6 +229,13 @@
                 name: 'disconnectUser',
                 callback: function (id) {
                     window.mn.models.notificationsModel.Users.remove(id);
+                }
+            },
+            {
+                name: 'chatMessageReceived',
+                callback: function (idUser, message, isAnswer) {
+                    var newMessage = new Message(message, isAnswer);
+                    window.mn.models.notificationsModel.ChatMessages.push(newMessage);
                 }
             }
         ],
